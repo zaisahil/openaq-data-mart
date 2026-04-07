@@ -60,7 +60,12 @@ docs/_build/
 target/
 
 # Custom files
-
+Data Engineering Assignment.txt
+query_1.csv
+query_2.csv
+query_3.csv
+query_4.csv
+Source_Metrics.csv
 
 # Pycharm files
 .idea/
