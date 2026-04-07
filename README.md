@@ -35,14 +35,13 @@ python csv_exporter.py
 
 ## 📐 Architectural Diagram
 
-```mermaid
 flowchart TD
-    A[Source_Metrics.csv<br/>Raw Air Quality Data] --> B[etl.py<br/>Validation, Cleaning, Interpolation, Logging]
-    B --> C[data_mart.db<br/>SQLite Data Mart]
-    B --> D[quality_report.json<br/>Data Quality Summary]
-    C --> E[queries.sql + query_runner.py<br/>Analytics & Reporting]
-    C --> F[csv_exporter.py<br/>Export Cleaned Data]
-    C --> G[schema.sql<br/>Dimensional Model<br/>Scalable to Redshift/PostgreSQL]
+    A[Source_Metrics.csv (Raw Air Quality Data)] --> B[etl.py (Validation, Cleaning, Interpolation, Logging)]
+    B --> C[data_mart.db (SQLite Data Mart)]
+    B --> D[quality_report.json (Data Quality Summary)]
+    C --> E[queries.sql + query_runner.py (Analytics & Reporting)]
+    C --> F[csv_exporter.py (Export Cleaned Data)]
+    C --> G[schema.sql (Dimensional Model, Scalable to Redshift/PostgreSQL)]
 
 ## Notes
 
