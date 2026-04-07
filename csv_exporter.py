@@ -82,10 +82,10 @@ def export_to_csv(cursor: sqlite3.Cursor, output_path: Path) -> None:
 
 def main(output_dir: Path) -> int:
     if not DB_FILE.exists():
-        print(f"Database not found: {DB_FILE}")
+        print(f"[!] Database not found: {DB_FILE}")
         return 1
     if not QUERIES_FILE.exists():
-        print(f"Queries file not found: {QUERIES_FILE}")
+        print(f"[!] Queries file not found: {QUERIES_FILE}")
         return 1
 
     output_dir.mkdir(exist_ok=True)
@@ -98,12 +98,12 @@ def main(output_dir: Path) -> int:
 
     for idx, statement in enumerate(statements, start=1):
         output_path = output_dir / f"query_{idx}.csv"
-        print(f"Exporting query {idx} to {output_path}")
+        print(f"[*] Exporting query {idx} to {output_path}")
         try:
             cursor = connection.execute(statement)
             export_to_csv(cursor, output_path)
         except sqlite3.Error as exc:
-            print(f"Failed to execute query {idx}: {exc}")
+            print(f"[!] Failed to execute query {idx}: {exc}")
             print(statement)
 
     connection.close()

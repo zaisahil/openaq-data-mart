@@ -33,6 +33,17 @@ python query_runner.py
 python csv_exporter.py
 ```
 
+## 📐 Architectural Diagram
+
+```mermaid
+flowchart TD
+    A[Source_Metrics.csv<br/>Raw Air Quality Data] --> B[etl.py<br/>Validation, Cleaning, Interpolation, Logging]
+    B --> C[data_mart.db<br/>SQLite Data Mart]
+    B --> D[quality_report.json<br/>Data Quality Summary]
+    C --> E[queries.sql + query_runner.py<br/>Analytics & Reporting]
+    C --> F[csv_exporter.py<br/>Export Cleaned Data]
+    C --> G[schema.sql<br/>Dimensional Model<br/>Scalable to Redshift/PostgreSQL]
+
 ## Notes
 
 - The ETL uses the standard Python library only, so no additional packages are required.
