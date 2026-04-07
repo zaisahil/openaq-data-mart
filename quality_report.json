@@ -1,0 +1,9 @@
+{
+  "source_file": "Source_Metrics.csv",
+  "total_bad_rows": 9399,
+  "reasons": {
+    "negative_value": 2522,
+    "missing_coordinates": 2036,
+    "invalid_unit": 4841
+  }
+}
