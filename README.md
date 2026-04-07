@@ -2,6 +2,17 @@
 
 This project implements a local data pipeline for the OpenAQ 2017 air quality dataset.
 
+---
+
+
+## 📊 OpenAQ Data Pipeline Overview
+
+![OpenAQ Data Pipeline Overview](openaq_data_pipeline_overview.png)
+
+*ETL process to clean and load air quality data into SQLite for analytics and reporting.*
+
+---
+
 ## What is included
 
 - `etl.py`: Python ETL script that reads `Source_Metrics.csv`, validates and cleans records, interpolates hourly gaps, and loads a local SQLite data mart at `data_mart.db`.
