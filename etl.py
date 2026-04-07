@@ -36,6 +36,12 @@ MAX_INTERPOLATION_GAP_HOURS = 3
 
 
 def normalize_unit(unit: str) -> str:
+    """
+    Normalize unit string to standard format using aliases.
+
+    Input: raw unit string
+    Output: normalized unit string (e.g., 'ug/m3' -> 'µg/m³')
+    """
     if not unit:
         return ""
     return UNIT_ALIASES.get(unit.strip().lower(), unit.strip())
@@ -58,6 +64,12 @@ class CleanMeasurement:
 
 
 def parse_utc(utc_value: str) -> Optional[datetime]:
+    """
+    Parse UTC timestamp string into datetime object.
+
+    Input: ISO timestamp string
+    Output: datetime (UTC, timezone removed) or None if invalid
+    """
     if not utc_value:
         return None
     try:
@@ -68,6 +80,12 @@ def parse_utc(utc_value: str) -> Optional[datetime]:
 
 
 def parse_float(value: str) -> Optional[float]:
+    """
+    Safely convert string to float.
+
+    Input: string value
+    Output: float or None if invalid
+    """
     try:
         return float(value)
     except (TypeError, ValueError):
@@ -75,6 +93,12 @@ def parse_float(value: str) -> Optional[float]:
 
 
 def is_valid_row(row: Dict[str, str]) -> Tuple[bool, Optional[str]]:
+    """
+    Validate raw CSV row against business rules.
+
+    Input: raw row dict
+    Output: (is_valid, reason_if_invalid)
+    """
     location = row.get("location", "").strip()
     city = row.get("city", "").strip()
     country = row.get("country", "").strip()
@@ -115,6 +139,12 @@ def is_valid_row(row: Dict[str, str]) -> Tuple[bool, Optional[str]]:
 
 
 def read_source_rows(path: Path) -> Iterator[Dict[str, str]]:
+    """
+    Read CSV file row-by-row.
+
+    Input: file path
+    Output: iterator of row dictionaries
+    """
     with path.open("r", encoding="utf-8", errors="replace", newline="") as src:
         reader = csv.DictReader(src)
         for row in reader:
@@ -122,6 +152,12 @@ def read_source_rows(path: Path) -> Iterator[Dict[str, str]]:
 
 
 def clean_measurement(row: Dict[str, str]) -> Optional[CleanMeasurement]:
+    """
+    Convert valid row into CleanMeasurement object.
+
+    Input: raw row dict
+    Output: CleanMeasurement or None if invalid
+    """
     valid, reason = is_valid_row(row)
     if not valid:
         return None
@@ -143,6 +179,12 @@ def clean_measurement(row: Dict[str, str]) -> Optional[CleanMeasurement]:
 
 
 def load_cleaned_measurements(path: Path) -> Tuple[List[CleanMeasurement], List[Dict[str, str]]]:
+    """
+    Load and separate clean vs bad rows.
+
+    Input: CSV file path
+    Output: (list of clean measurements, list of bad rows with reason)
+    """
     clean: List[CleanMeasurement] = []
     bad_rows: List[Dict[str, str]] = []
     for row in read_source_rows(path):
@@ -158,6 +200,12 @@ def load_cleaned_measurements(path: Path) -> Tuple[List[CleanMeasurement], List[
 
 
 def group_by_location_and_parameter(measurements: List[CleanMeasurement]) -> Dict[Tuple[str, str], List[CleanMeasurement]]:
+    """
+    Group measurements by (location, parameter).
+
+    Input: list of measurements
+    Output: dict with grouped and time-sorted measurements
+    """
     groups: Dict[Tuple[str, str], List[CleanMeasurement]] = {}
     for m in measurements:
         key = (m.location, m.parameter)
@@ -168,6 +216,12 @@ def group_by_location_and_parameter(measurements: List[CleanMeasurement]) -> Dic
 
 
 def interpolate_group(values: List[CleanMeasurement]) -> List[CleanMeasurement]:
+    """
+    Fill small time gaps using linear interpolation.
+
+    Input: sorted measurements for one group
+    Output: list with interpolated records added
+    """
     if len(values) < 2:
         return list(values)
     values = sorted(values, key=lambda item: item.utc)
@@ -201,6 +255,12 @@ def interpolate_group(values: List[CleanMeasurement]) -> List[CleanMeasurement]:
 
 
 def interpolate_measurements(measurements: List[CleanMeasurement]) -> List[CleanMeasurement]:
+    """
+    Apply interpolation across all groups.
+
+    Input: list of clean measurements
+    Output: list including interpolated records (sorted)
+    """
     groups = group_by_location_and_parameter(measurements)
     interpolated: List[CleanMeasurement] = []
     for values in groups.values():
@@ -210,6 +270,12 @@ def interpolate_measurements(measurements: List[CleanMeasurement]) -> List[Clean
 
 
 def create_schema(conn: sqlite3.Connection) -> None:
+    """
+    Create star schema tables in SQLite.
+
+    Input: DB connection
+    Output: None (creates tables if not exist)
+    """
     conn.executescript(
         """
         PRAGMA foreign_keys = ON;
@@ -281,6 +347,12 @@ def create_schema(conn: sqlite3.Connection) -> None:
 
 
 def ensure_parameter(conn: sqlite3.Connection, parameter: str, unit: str) -> int:
+    """
+    Ensure parameter exists in dimension table.
+
+    Input: DB connection, parameter name, unit
+    Output: parameter_id
+    """
     cursor = conn.execute(
         "SELECT parameter_id FROM dim_parameter WHERE parameter = ?",
         (parameter,),
@@ -296,6 +368,12 @@ def ensure_parameter(conn: sqlite3.Connection, parameter: str, unit: str) -> int
 
 
 def ensure_location(conn: sqlite3.Connection, measurement: CleanMeasurement) -> int:
+    """
+    Ensure location exists in dimension table.
+
+    Input: DB connection, measurement
+    Output: location_id
+    """
     cursor = conn.execute(
         "SELECT location_id FROM dim_location WHERE location = ? AND city = ? AND country = ?",
         (measurement.location, measurement.city, measurement.country),
@@ -318,6 +396,12 @@ def ensure_location(conn: sqlite3.Connection, measurement: CleanMeasurement) -> 
 
 
 def ensure_time(conn: sqlite3.Connection, measurement: CleanMeasurement) -> int:
+    """
+    Ensure time dimension record exists.
+
+    Input: DB connection, measurement
+    Output: time_id
+    """
     utc_text = measurement.utc.isoformat()
     cursor = conn.execute(
         "SELECT time_id FROM dim_time WHERE utc = ?",
@@ -344,6 +428,12 @@ def ensure_time(conn: sqlite3.Connection, measurement: CleanMeasurement) -> int:
 
 
 def insert_bad_data(conn: sqlite3.Connection, bad_rows: List[Dict[str, str]]) -> None:
+    """
+    Store invalid rows into bad_data table.
+
+    Input: DB connection, list of bad rows
+    Output: None
+    """
     if not bad_rows:
         return
     conn.executemany(
@@ -369,6 +459,12 @@ def insert_bad_data(conn: sqlite3.Connection, bad_rows: List[Dict[str, str]]) ->
 
 
 def load_measurements(conn: sqlite3.Connection, measurements: List[CleanMeasurement]) -> None:
+    """
+    Load fact table with measurements.
+
+    Input: DB connection, list of measurements
+    Output: None
+    """
     parameter_ids: Dict[str, int] = {}
     for m in measurements:
         if m.parameter not in parameter_ids:
@@ -390,6 +486,12 @@ def load_measurements(conn: sqlite3.Connection, measurements: List[CleanMeasurem
 
 
 def save_quality_report(bad_rows: List[Dict[str, str]], report_path: Path) -> None:
+    """
+    Generate JSON report of bad data.
+
+    Input: bad rows list, output file path
+    Output: None (writes JSON file)
+    """
     counts: Dict[str, int] = {}
     for row in bad_rows:
         counts[row.get("bad_reason", "unknown")] = counts.get(row.get("bad_reason", "unknown"), 0) + 1
@@ -402,12 +504,24 @@ def save_quality_report(bad_rows: List[Dict[str, str]], report_path: Path) -> No
 
 
 def run_pipeline() -> None:
-    print("Loading source data from", SOURCE_CSV)
+    """
+    Main pipeline execution.
+
+    Steps:
+    1. Load & validate data
+    2. Interpolate missing values
+    3. Create DB schema
+    4. Load data into warehouse
+    5. Save quality report
+
+    Output: SQLite DB + JSON report
+    """
+    print("[*] Loading source data from", SOURCE_CSV)
     clean_rows, bad_rows = load_cleaned_measurements(SOURCE_CSV)
-    print(f"Clean rows: {len(clean_rows)}, bad rows: {len(bad_rows)}")
+    print(f"[*] Clean rows: {len(clean_rows)}, bad rows: {len(bad_rows)}")
 
     interpolated_rows = interpolate_measurements(clean_rows)
-    print(f"Records after interpolation: {len(interpolated_rows)}")
+    print(f"[*] Records after interpolation: {len(interpolated_rows)}")
 
     if DB_FILE.exists():
         DB_FILE.unlink()
@@ -418,8 +532,8 @@ def run_pipeline() -> None:
         conn.commit()
 
     save_quality_report(bad_rows, QUALITY_REPORT)
-    print("Data mart created at", DB_FILE)
-    print("Quality report saved at", QUALITY_REPORT)
+    print("[*] Data mart created at", DB_FILE)
+    print("[*] Quality report saved at", QUALITY_REPORT)
 
 
 if __name__ == "__main__":
