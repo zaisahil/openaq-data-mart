@@ -60,6 +60,13 @@ ORDER BY avg_pm25 DESC
 LIMIT 5;
 
 -- 3) For a single day, find the top 10 cities by PM2.5 and show CO/SO2 stats for those cities.
+
+-- Query 3 returns no results because of data sparsity:
+-- On 2017-08-19, the top PM2.5 cities (e.g., LEWIS AND CLARK, Coyhaique)
+-- have no CO or SO2 measurements for that same day.
+-- The join logic requires all pollutants on the same date,
+-- so no matches exist and the query yields zero rows.
+
 WITH target_day AS (
     SELECT date_trunc('day', '2017-08-19T00:00:00') AS day
 ),
